@@ -1,0 +1,1800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VIBECRAFT - Complete 8-Floor Campus & Attendance Hub</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Three.js & OrbitControls CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    #threejs-canvas-container {
+      width: 100%;
+      height: 580px;
+      position: relative;
+      border-radius: 1.25rem;
+      overflow: hidden;
+      cursor: grab;
+    }
+    #threejs-canvas-container:active {
+      cursor: grabbing;
+    }
+    .flat-grid-card {
+      transition: all 0.2s ease;
+    }
+    .flat-grid-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans p-3 md:p-8">
+
+  <div class="max-w-7xl mx-auto space-y-6 pb-28">
+    <!-- Header -->
+    <header class="border-b border-slate-800 pb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-3">
+          <h1 class="text-3xl font-black text-indigo-400 tracking-tight">VIBECRAFT</h1>
+          <span class="bg-gradient-to-r from-indigo-900 to-violet-900 text-indigo-200 text-xs font-bold px-3 py-1 rounded-full border border-indigo-700/60 shadow-sm">
+            Complete Architecture (Ground to 7th Floor)
+          </span>
+        </div>
+        <p class="text-slate-400 text-sm mt-1">Odd Semester: Aug 29, 2026 – Nov 29, 2026 • SRM IST Department Building</p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button onclick="exportICS()" class="bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5 shadow">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          Export Calendar (.ics)
+        </button>
+        <span class="bg-emerald-950 text-emerald-400 text-xs font-semibold px-3 py-2 rounded-full border border-emerald-700/60 flex items-center gap-1.5 shadow">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Live Timetable Synchronized
+        </span>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="flex border-b border-slate-800 gap-6 overflow-x-auto text-sm font-bold whitespace-nowrap">
+      <button id="tab-3d" onclick="switchMainTab('3d')" class="pb-3 text-indigo-400 border-b-2 border-indigo-500 transition flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+        3D Visual Campus Map
+      </button>
+      <button id="tab-floor" onclick="switchMainTab('floor')" class="pb-3 text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+        The Floor Grid & AI Finder
+      </button>
+      <button id="tab-attendance" onclick="switchMainTab('attendance')" class="pb-3 text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+        Attendance Advisor
+      </button>
+    </div>
+
+    <!-- ==================== SECTION 1: 3D MAP & PLAIN FLAT VIEW ==================== -->
+    <section id="view-3d-map" class="space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-black text-slate-100 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+            8-Story Department Building
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Ground through 7th floor completely rendered. Click any room block to inspect countdown timers and squad tools!</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 text-xs">
+          <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 font-bold">
+            <button id="btn-view-3d" onclick="setVisualViewMode('3d')" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white transition flex items-center gap-1.5 shadow">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+              3D Orbit Map
+            </button>
+            <button id="btn-view-flat" onclick="setVisualViewMode('flat')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+              Plain Flat 2D View
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800">
+            <label class="text-slate-400 font-semibold">Day:</label>
+            <select id="map-day-select" onchange="syncScheduleInputs('day', this.value)" class="bg-transparent text-slate-200 font-bold outline-none cursor-pointer">
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+              <option value="Friday">Friday</option>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800">
+            <label class="text-slate-400 font-semibold">Period:</label>
+            <select id="map-period-select" onchange="syncScheduleInputs('period', this.value)" class="bg-transparent text-slate-200 font-bold outline-none cursor-pointer">
+              <option value="1">Period 1 (09:00 - 09:50 AM)</option>
+              <option value="2">Period 2 (09:55 - 10:45 AM)</option>
+              <option value="3">Period 3 (10:50 - 11:40 AM)</option>
+              <option value="4">Period 4 (11:45 - 12:35 PM)</option>
+              <option value="5">Period 5 (12:35 - 01:30 PM / Lunch)</option>
+              <option value="6">Period 6 (01:30 - 02:20 PM)</option>
+              <option value="7">Period 7 (02:25 - 03:15 PM)</option>
+              <option value="8">Period 8 (03:20 - 04:10 PM)</option>
+              <option value="9">Period 9 (04:15 - 05:05 PM)</option>
+            </select>
+          </div>
+
+          <button onclick="reset3DCamera()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl border border-slate-700 font-bold transition">
+            Reset Camera
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-4 relative shadow-2xl flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-3 px-2">
+            <div class="flex items-center gap-2 text-xs font-semibold">
+              <span class="inline-flex items-center gap-1.5 bg-emerald-950/80 border border-emerald-600/50 text-emerald-300 px-2.5 py-1 rounded-full">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Free Room
+              </span>
+              <span class="inline-flex items-center gap-1.5 bg-rose-950/80 border border-rose-600/50 text-rose-300 px-2.5 py-1 rounded-full">
+                <span class="w-2 h-2 rounded-full bg-rose-400"></span> Occupied
+              </span>
+            </div>
+            <div id="mode-badge" class="text-[11px] text-slate-400 bg-slate-950/70 px-3 py-1 rounded-full border border-slate-800">
+              WebGL 3D: All 8 Floors (0 to 7) Rendered
+            </div>
+          </div>
+
+          <div id="threejs-canvas-container" class="border border-slate-800/80 bg-slate-950">
+            <div id="room-hover-tooltip" class="hidden absolute pointer-events-none bg-slate-900/95 text-white border border-indigo-500/60 px-3 py-2 rounded-xl shadow-2xl text-xs z-20 backdrop-blur-md"></div>
+          </div>
+
+          <div id="flat-plan-container" class="hidden min-h-[580px] border border-slate-800/80 bg-slate-950 rounded-2xl p-5 space-y-5 overflow-y-auto max-h-[580px]"></div>
+
+          <div class="flex items-center justify-between text-[11px] text-slate-500 px-2 pt-3">
+            <span>🖱️ Click any room to select & inspect</span>
+            <span id="canvas-hint">Controls: Left-Click Rotate • Right-Click Pan • Scroll Zoom</span>
+          </div>
+        </div>
+
+        <!-- Room Inspector -->
+        <div class="bg-gradient-to-br from-slate-900 to-indigo-950/50 border border-indigo-500/30 rounded-3xl p-6 shadow-2xl flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+              <h3 class="text-lg font-black text-indigo-300 flex items-center gap-2">
+                <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Room Details & Timer
+              </h3>
+              <span id="selected-room-status-badge" class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-900 text-emerald-300 border border-emerald-600 uppercase">
+                FREE NOW
+              </span>
+            </div>
+
+            <div class="space-y-4">
+              <div class="flex items-baseline justify-between">
+                <div>
+                  <h4 id="inspector-room-id" class="text-3xl font-black text-white tracking-tight">IST602</h4>
+                  <p id="inspector-room-sub" class="text-xs text-slate-400">Main Hall • Floor 6</p>
+                </div>
+                <div class="text-right">
+                  <span id="inspector-room-cap" class="text-xs bg-slate-800 text-slate-300 px-2.5 py-1 rounded-lg border border-slate-700 font-bold block">Capacity: 75</span>
+                  <span id="inspector-room-ac" class="text-[11px] text-cyan-400 font-semibold mt-1 block">AC Equipped</span>
+                </div>
+              </div>
+
+              <div class="bg-slate-950/90 border border-indigo-500/40 rounded-2xl p-4 text-center space-y-1 shadow-inner relative overflow-hidden">
+                <div class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">
+                  Time Remaining Until Next Class
+                </div>
+                <div id="inspector-countdown-timer" class="text-3xl sm:text-4xl font-black text-indigo-400 tracking-wider font-mono">
+                  00h 42m 15s
+                </div>
+                <p id="inspector-countdown-sub" class="text-xs text-slate-400">
+                  Free until <b class="text-indigo-300" id="inspector-free-until">02:25 PM</b>
+                </p>
+              </div>
+
+              <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 text-xs space-y-1">
+                <div class="flex justify-between text-slate-400">
+                  <span>Current Class Status:</span>
+                  <span id="inspector-curr-occupant" class="font-bold text-slate-200">Empty (No Class Scheduled)</span>
+                </div>
+                <div class="flex justify-between text-slate-400">
+                  <span>Next Scheduled Class:</span>
+                  <span id="inspector-next-occupant" class="font-bold text-amber-300">Period 7 (Starts in 42m)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-3 pt-4 border-t border-slate-800">
+            <div class="text-xs text-slate-400">
+              Claim this free room and broadcast the location to your friends or study group instantly:
+            </div>
+
+            <button 
+              id="call-squad-btn" 
+              onclick="triggerCallTheSquad()" 
+              class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold py-3.5 px-4 rounded-2xl shadow-xl transition transform active:scale-95 flex items-center justify-center gap-2.5 text-sm"
+            >
+              <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.299.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.071.376-.043.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824zm-3.423-14.416c-6.627 0-12 5.373-12 12 0 2.155.57 4.178 1.564 5.927l-1.657 6.057 6.223-1.632c1.706.945 3.666 1.487 5.748 1.487 6.627 0 12-5.373 12-12s-5.373-12-12-12z"/></svg>
+              <span>Call the Squad (WhatsApp)</span>
+            </button>
+
+            <button onclick="copySquadLink()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 px-3 rounded-xl border border-slate-700 transition text-xs flex items-center justify-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+              <span id="copy-btn-label">Copy Invite Message</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 2: FLOOR GRID & AI ROOM FINDER ==================== -->
+    <section id="view-floor-manager" class="space-y-6 hidden">
+      <div class="bg-gradient-to-r from-slate-900 via-indigo-950/70 to-slate-900 border border-indigo-500/40 rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-indigo-900/60 pb-3">
+          <div>
+            <h2 class="text-xl font-extrabold text-indigo-200 flex items-center gap-2">
+              <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              The AI Room Finder
+            </h2>
+            <p class="text-xs text-slate-300 mt-0.5">Type natural language queries to search empty rooms based on section timetables and room specs.</p>
+          </div>
+          <span class="text-[10px] bg-indigo-900 text-indigo-300 font-bold px-3 py-1 rounded-full border border-indigo-700">NLP Powered</span>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+          <input 
+            type="text" 
+            id="ai-room-query" 
+            placeholder="e.g., 'I need an AC room on the 6th floor for me and my team for the next 2 hours'" 
+            onkeydown="if(event.key==='Enter') executeAIRoomSearch()" 
+            class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 shadow-inner"
+          />
+          <button onclick="executeAIRoomSearch()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3 rounded-xl text-sm transition shadow-lg flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            Find Empty Rooms
+          </button>
+        </div>
+
+        <div class="flex flex-wrap gap-2 text-xs">
+          <span class="text-slate-400 py-1 font-semibold">Quick templates:</span>
+          <button onclick="setQueryAndSearch('Need an AC room on 6th floor for 2 hours')" class="bg-slate-800 hover:bg-slate-700 text-indigo-300 px-3 py-1 rounded-full border border-slate-700 transition">
+            "AC room on 6th floor for 2 hours"
+          </button>
+          <button onclick="setQueryAndSearch('Need classroom on 5th floor')" class="bg-slate-800 hover:bg-slate-700 text-indigo-300 px-3 py-1 rounded-full border border-slate-700 transition">
+            "Classroom on 5th floor"
+          </button>
+          <button onclick="setQueryAndSearch('Any empty lab on 1st floor')" class="bg-slate-800 hover:bg-slate-700 text-indigo-300 px-3 py-1 rounded-full border border-slate-700 transition">
+            "Lab on 1st floor"
+          </button>
+          <button onclick="setQueryAndSearch('Any empty AC room right now')" class="bg-slate-800 hover:bg-slate-700 text-indigo-300 px-3 py-1 rounded-full border border-slate-700 transition">
+            "Any empty AC room right now"
+          </button>
+        </div>
+
+        <div id="ai-search-output" class="hidden p-4 rounded-xl bg-slate-950/90 border border-indigo-500/50 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h3 class="font-bold text-sm text-indigo-300">AI Matched Results</h3>
+            <span id="ai-match-count" class="text-xs bg-emerald-900/80 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-700 font-semibold">0 Matches</span>
+          </div>
+          <div id="ai-extracted-params" class="text-xs text-slate-400 flex flex-wrap gap-x-4 gap-y-1"></div>
+          <div id="ai-matched-rooms-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1"></div>
+        </div>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-md space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+          <h2 class="text-lg font-bold text-slate-200">Floor & Schedule Controls</h2>
+          <div class="flex flex-wrap items-center gap-3">
+            <div>
+              <label class="text-xs text-slate-400 font-semibold mr-1">Day:</label>
+              <select id="grid-day-select" onchange="syncScheduleInputs('day', this.value)" class="bg-slate-950 border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 text-slate-200 outline-none">
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 font-semibold mr-1">Time Slot:</label>
+              <select id="grid-period-select" onchange="syncScheduleInputs('period', this.value)" class="bg-slate-950 border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 text-slate-200 outline-none">
+                <option value="1">Period 1 (09:00 - 09:50 AM)</option>
+                <option value="2">Period 2 (09:55 - 10:45 AM)</option>
+                <option value="3">Period 3 (10:50 - 11:40 AM)</option>
+                <option value="4">Period 4 (11:45 - 12:35 PM)</option>
+                <option value="5">Period 5 (12:35 - 01:30 PM / Lunch)</option>
+                <option value="6">Period 6 (01:30 - 02:20 PM)</option>
+                <option value="7">Period 7 (02:25 - 03:15 PM)</option>
+                <option value="8">Period 8 (03:20 - 04:10 PM)</option>
+                <option value="9">Period 9 (04:15 - 05:05 PM)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <div>
+            <label class="block text-slate-400 mb-1 font-medium">Floor Level</label>
+            <select id="filter-floor" onchange="renderFloorGrid()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 outline-none">
+              <option value="ALL">All Floors (0 to 7)</option>
+              <option value="0">Ground Floor (G)</option>
+              <option value="1">1st Floor</option>
+              <option value="2">2nd Floor</option>
+              <option value="3">3rd Floor</option>
+              <option value="4">4th Floor</option>
+              <option value="5">5th Floor</option>
+              <option value="6">6th Floor</option>
+              <option value="7">7th Floor</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1 font-medium">AC Preference</label>
+            <select id="filter-ac" onchange="renderFloorGrid()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 outline-none">
+              <option value="ALL">All Rooms</option>
+              <option value="YES">AC Only</option>
+              <option value="NO">Non-AC Only</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1 font-medium">Availability</label>
+            <select id="filter-status" onchange="renderFloorGrid()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 outline-none">
+              <option value="ALL">All Statuses</option>
+              <option value="EMPTY">Free Rooms Only</option>
+              <option value="OCCUPIED">Occupied Only</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1 font-medium">Quick Stats</label>
+            <div class="bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-300 font-bold flex justify-between items-center h-[37px]">
+              <span>Free Rooms:</span>
+              <span id="quick-free-count" class="text-emerald-400 text-sm">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold text-slate-200">The Floor Grid (Organized Floor-by-Floor)</h2>
+          <div class="flex items-center gap-4 text-xs font-semibold">
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-500/30 border border-emerald-500 inline-block"></span> Empty / Available</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-rose-500/30 border border-rose-500 inline-block"></span> Occupied</span>
+          </div>
+        </div>
+        <div id="floor-grid-container" class="space-y-5"></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 3: ATTENDANCE ADVISOR ==================== -->
+    <section id="view-attendance" class="space-y-6 hidden">
+      <div id="alert-banner" class="hidden bg-rose-950/80 border-2 border-rose-500 text-rose-100 p-4 rounded-2xl shadow-xl flex items-start gap-3 animate-pulse">
+        <svg class="w-6 h-6 text-rose-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        <div>
+          <h3 class="font-bold text-lg text-rose-200">ALERT: Detention Risk Detected!</h3>
+          <p class="text-sm text-rose-200/90 mt-1">One or more subjects have dropped below the mandatory 75% attendance threshold.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-md space-y-4 lg:col-span-2">
+          <h2 class="text-xl font-bold text-slate-200 border-b border-slate-800 pb-2">1. Date & Section Selection</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="sm:col-span-2">
+              <label class="block text-sm font-medium text-slate-300 mb-1">Select Official Class / Section</label>
+              <select id="section-select" onchange="renderSubjectInputs(); calculateAttendance();" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none"></select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-1">Current Date</label>
+              <input type="date" id="current-date" min="2026-08-29" max="2026-11-29" value="2026-09-28" onchange="calculateAttendance()" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-1">Target Planning Date</label>
+              <input type="date" id="target-date" min="2026-08-29" max="2026-11-29" value="2026-11-29" onchange="calculateAttendance()" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none" />
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 border border-indigo-500/40 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between border-b border-indigo-800/60 pb-2 mb-3">
+              <h2 class="text-xl font-bold text-indigo-200 flex items-center gap-2">
+                <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                Calculated Total Attendance
+              </h2>
+              <span class="text-[10px] bg-indigo-800 text-indigo-200 font-bold px-2 py-0.5 rounded-full uppercase">Exact</span>
+            </div>
+            <p class="text-xs text-slate-300 mb-2">Calculated from total classes conducted minus the missed periods entered below.</p>
+            <div class="text-center my-3">
+              <span id="calculated-overall-pct" class="text-4xl font-black text-indigo-400">100.0%</span>
+              <p id="total-conducted-info" class="text-xs text-slate-400 mt-1">0 / 0 total periods attended</p>
+            </div>
+          </div>
+          <div class="mt-2 pt-3 border-t border-slate-800 text-xs text-slate-300 flex justify-between items-center">
+            <span>Overall Safe Bunk Buffer:</span>
+            <span id="safe-bunk-periods" class="font-bold text-emerald-400 text-sm">0 periods</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MISSED CLASSES INPUT PANEL -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-md space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+          <div>
+            <h2 class="text-xl font-bold text-slate-200">2. Enter Missed Classes Per Subject</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Enter the exact number of class periods/hours you have missed for each course so far.</p>
+          </div>
+          <span class="text-xs bg-slate-950 text-indigo-300 border border-indigo-700/60 px-3 py-1 rounded-full w-fit">
+            Threshold: 75% Per Subject
+          </span>
+        </div>
+        <div id="subject-inputs-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2"></div>
+      </div>
+
+      <!-- Analytics & OD/Medical Simulator -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-md space-y-4">
+          <h2 class="text-xl font-bold text-slate-200 border-b border-slate-800 pb-2">3. Duty / Leave Credit</h2>
+          <p class="text-xs text-slate-400">Input approved On-Duty (OD) or Medical Leave days to calculate your credited effective attendance.</p>
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1">Approved OD Days</label>
+            <input type="number" id="od-days" min="0" max="30" value="0" oninput="calculateAttendance()" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1">Medical Leave Days</label>
+            <input type="number" id="ml-days" min="0" max="30" value="0" oninput="calculateAttendance()" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none" />
+          </div>
+          <div class="mt-4 p-3 rounded-xl bg-slate-950 border border-slate-800">
+            <span class="text-xs text-slate-400 uppercase font-bold block mb-1">Overall Status</span>
+            <div id="eligibility-badge" class="text-sm font-bold text-emerald-400">Normal Eligibility Status</div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl text-center shadow">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Effective Attendance (With OD)</span>
+            <span id="res-effective-pct" class="text-3xl font-black text-indigo-400">100.0%</span>
+            <p id="res-od-benefit" class="text-xs text-slate-400 mt-1">Base: 100.0%</p>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl text-center shadow">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Remaining Semester Classes</span>
+            <span id="res-remaining" class="text-3xl font-black text-blue-400">0</span>
+            <p class="text-xs text-slate-400 mt-1">Scheduled periods before target date</p>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl text-center shadow">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Needed Classes for 75%</span>
+            <span id="res-detention" class="text-3xl font-black text-amber-400">0</span>
+            <p class="text-xs text-slate-400 mt-1">Must attend across all subjects</p>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col items-center justify-center shadow">
+          <h3 class="text-lg font-bold text-slate-200 self-start mb-2">Attended vs Missed Distribution</h3>
+          <div class="w-full max-w-xs h-56">
+            <canvas id="attendanceChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Floating Voice/Text AI Chatbot Button -->
+  <button id="chat-toggle" onclick="toggleChat()" class="fixed bottom-6 right-6 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white p-4 rounded-full shadow-2xl transition duration-300 z-50 flex items-center justify-center gap-2 border border-indigo-400/30">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+    </svg>
+    <span class="font-medium hidden sm:inline">AI Campus Advisor</span>
+  </button>
+
+  <!-- Interactive AI Drawer Window -->
+  <div id="chat-window" class="hidden fixed bottom-20 right-6 w-96 max-w-[calc(100vw-2.5rem)] h-[520px] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl flex flex-col z-50 overflow-hidden">
+    <div class="bg-slate-950 p-4 border-b border-slate-800 flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <div class="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></div>
+        <div>
+          <h4 class="font-bold text-slate-200 text-sm">VIBECRAFT AI Advisor</h4>
+          <p class="text-[10px] text-slate-400">8 Floors • Countdown • Attendance</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="tts-toggle-btn" onclick="toggleTTS()" title="Toggle Voice Responses" class="text-xs bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-lg text-slate-300 border border-slate-700">
+          🔊 Audio: ON
+        </button>
+        <button onclick="toggleChat()" class="text-slate-400 hover:text-slate-200 text-xl font-bold">&times;</button>
+      </div>
+    </div>
+
+    <div class="p-2 bg-slate-950/60 border-b border-slate-800 flex gap-1.5 overflow-x-auto text-[11px] whitespace-nowrap">
+      <button onclick="sendQuickPrompt('Find empty AC room on 6th floor')" class="bg-slate-800 hover:bg-indigo-900/60 text-indigo-300 px-2.5 py-1 rounded-full border border-slate-700">
+        🏢 Free AC Rooms
+      </button>
+      <button onclick="sendQuickPrompt('Switch to Flat View')" class="bg-slate-800 hover:bg-indigo-900/60 text-indigo-300 px-2.5 py-1 rounded-full border border-slate-700">
+        📐 Plain Flat View
+      </button>
+      <button onclick="sendQuickPrompt('Which subject is at risk?')" class="bg-slate-800 hover:bg-indigo-900/60 text-indigo-300 px-2.5 py-1 rounded-full border border-slate-700">
+        ⚠️ At-risk subjects?
+      </button>
+    </div>
+
+    <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
+      <div class="bg-slate-800/80 p-3 rounded-xl text-slate-200 max-w-[88%] border border-slate-700">
+        👋 Hi! All 8 floors (Ground to 7th) are live. Click any room for countdown timers, use WhatsApp broadcast, or ask me any campus question!
+      </div>
+    </div>
+
+    <div class="p-3 border-t border-slate-800 bg-slate-950/80 flex gap-2 items-center">
+      <button id="mic-btn" onclick="toggleSpeechRecognition()" title="Speak to Assistant" class="p-2.5 bg-slate-800 hover:bg-indigo-600 text-slate-300 rounded-xl border border-slate-700 transition flex-shrink-0">
+        <svg id="mic-icon" class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z"></path></svg>
+      </button>
+      <input type="text" id="chat-input" placeholder="Ask about rooms or attendance..." onkeydown="if(event.key==='Enter') sendChatMessage()" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500" />
+      <button onclick="sendChatMessage()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-xl text-xs font-semibold transition">
+        Send
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. DATASETS (ALL 8 FLOORS: 0 THROUGH 7)
+    // ==========================================
+    const periodTimes = {
+      1: { start: "09:00", end: "09:50", label: "09:00 - 09:50 AM" },
+      2: { start: "09:55", end: "10:45", label: "09:55 - 10:45 AM" },
+      3: { start: "10:50", end: "11:40", label: "10:50 - 11:40 AM" },
+      4: { start: "11:45", end: "12:35", label: "11:45 - 12:35 PM" },
+      5: { start: "12:35", end: "13:30", label: "12:35 - 01:30 PM", isLunch: true },
+      6: { start: "13:30", end: "14:20", label: "01:30 - 02:20 PM" },
+      7: { start: "14:25", end: "15:15", label: "02:25 - 03:15 PM" },
+      8: { start: "15:20", end: "16:10", label: "03:20 - 04:10 PM" },
+      9: { start: "16:15", end: "17:05", label: "04:15 - 05:05 PM" }
+    };
+
+    // Full 8-Floor Department Building Room Dataset
+    const rooms = [
+      // Ground Floor (Floor 0)
+      { id: "G01",    floor: 0, ac: true,  type: "Admin / Reception", capacity: 40, pos: { x: -2.2, z: 0 } },
+      { id: "G02",    floor: 0, ac: false, type: "Student Center",    capacity: 50, pos: { x: 2.2, z: 0 } },
+
+      // 1st Floor
+      { id: "IST101", floor: 1, ac: true,  type: "Faculty Lounge",    capacity: 35, pos: { x: -2.2, z: 0 } },
+      { id: "IST108", floor: 1, ac: true,  type: "PCB Practical Lab", capacity: 45, pos: { x: 2.2, z: 0 } },
+
+      // 2nd Floor (Official Schedule)
+      { id: "IST201", floor: 2, ac: false, type: "Lecture Hall",      capacity: 60, pos: { x: 0, z: 0 } },
+
+      // 3rd Floor
+      { id: "IST301", floor: 3, ac: false, type: "Department Library", capacity: 50, pos: { x: -2.2, z: 0 } },
+      { id: "IST305", floor: 3, ac: true,  type: "Conference Room",   capacity: 35, pos: { x: 2.2, z: 0 } },
+
+      // 4th Floor
+      { id: "IST401", floor: 4, ac: true,  type: "Research Lab",      capacity: 30, pos: { x: -2.2, z: 0 } },
+      { id: "IST402", floor: 4, ac: false, type: "Staff Room",        capacity: 25, pos: { x: 2.2, z: 0 } },
+
+      // 5th Floor (Official Schedule)
+      { id: "IST502", floor: 5, ac: true,  type: "Classroom",         capacity: 65, pos: { x: -3.6, z: 0 } },
+      { id: "IST510", floor: 5, ac: false, type: "Classroom",         capacity: 60, pos: { x: 0, z: 0 } },
+      { id: "IST520", floor: 5, ac: false, type: "Classroom",         capacity: 60, pos: { x: 3.6, z: 0 } },
+
+      // 6th Floor (Official Schedule)
+      { id: "IST602", floor: 6, ac: true,  type: "Main Hall",         capacity: 75, pos: { x: -3.6, z: 0 } },
+      { id: "IST609", floor: 6, ac: false, type: "Classroom",         capacity: 60, pos: { x: 0, z: 0 } },
+      { id: "IST626", floor: 6, ac: false, type: "Classroom",         capacity: 55, pos: { x: 3.6, z: 0 } },
+
+      // 7th Floor (Official Schedule)
+      { id: "IST702", floor: 7, ac: true,  type: "Classroom",         capacity: 65, pos: { x: -2.2, z: 0 } },
+      { id: "IST710", floor: 7, ac: true,  type: "Seminar Room",      capacity: 70, pos: { x: 2.2, z: 0 } }
+    ];
+
+    // Master Room Occupancy (by period 1 to 9)
+    const roomTimetable = {
+      Monday: {
+        IST602: [1, 2, 3, 4, 6, 7, 8, 9],
+        IST609: [1],
+        IST710: [1, 2, 4, 8, 9],
+        IST520: [1, 2, 4],
+        IST502: [6, 7, 8, 9],
+        IST702: [6, 7, 8, 9],
+        IST108: [7, 8, 9],
+        G01: [1, 2]
+      },
+      Tuesday: {
+        IST602: [1, 2, 3, 4, 6, 7, 8, 9],
+        IST520: [1],
+        IST710: [2, 3, 4],
+        IST201: [3, 4],
+        IST502: [6, 7, 8, 9],
+        IST702: [6, 7, 8, 9],
+        IST305: [3, 4]
+      },
+      Wednesday: {
+        IST602: [1, 2, 3, 7, 8, 9],
+        IST710: [1, 3],
+        IST520: [1],
+        IST510: [1, 2, 3, 4],
+        IST502: [7, 8, 9],
+        IST702: [6, 7, 8, 9],
+        IST108: [6, 7]
+      },
+      Thursday: {
+        IST602: [1, 2, 3, 4, 6, 7, 8, 9],
+        IST201: [1, 2, 8, 9],
+        IST710: [1, 3, 4],
+        IST510: [2, 3, 6, 7],
+        IST626: [3],
+        IST520: [3],
+        IST502: [4, 6, 7, 8, 9],
+        IST702: [6, 7, 8, 9],
+        IST401: [6, 7]
+      },
+      Friday: {
+        IST602: [1, 2, 3, 4, 6, 7],
+        IST626: [1, 2, 4, 5, 8, 9],
+        IST702: [1, 2, 3, 4, 5],
+        IST108: [1, 2, 3]
+      }
+    };
+
+    const sectionTimetables = {
+      "I ECE-A":          { 1: 6, 2: 6, 3: 5, 4: 4, 5: 6, 6: 0, 0: 0 },
+      "I ECE-B / EEE":    { 1: 6, 2: 5, 3: 7, 4: 6, 5: 4, 6: 0, 0: 0 },
+      "I ECE-DS":         { 1: 6, 2: 6, 3: 6, 4: 5, 5: 5, 6: 0, 0: 0 },
+      "I Biotech-B / BME": { 1: 6, 2: 5, 3: 4, 4: 5, 5: 5, 6: 0, 0: 0 },
+      "II BME":           { 1: 6, 2: 7, 3: 4, 4: 5, 5: 5, 6: 0, 0: 0 },
+      "II ECE-DS A":      { 1: 6, 2: 6, 3: 5, 4: 5, 5: 4, 6: 0, 0: 0 },
+      "II ECE-DS B":      { 1: 6, 2: 6, 3: 5, 4: 6, 5: 5, 6: 0, 0: 0 },
+      "III ECE-A":        { 1: 4, 2: 5, 3: 5, 4: 5, 5: 5, 6: 0, 0: 0 },
+      "III ECE-B":        { 1: 7, 2: 5, 3: 5, 4: 6, 5: 5, 6: 0, 0: 0 },
+      "III ECE-DS":       { 1: 6, 2: 6, 3: 6, 4: 4, 5: 6, 6: 0, 0: 0 },
+      "III BME":          { 1: 7, 2: 4, 3: 5, 4: 5, 5: 5, 6: 0, 0: 0 },
+      "IV ECE-A":         { 1: 5, 2: 4, 3: 5, 4: 4, 5: 4, 6: 0, 0: 0 },
+      "IV ECE-B":         { 1: 5, 2: 5, 3: 5, 4: 5, 5: 4, 6: 0, 0: 0 }
+    };
+
+    const subjectSchedules = {
+      "III ECE-A": [
+        { code: "18EC301T", name: "Digital Signal Processing (DSP)", weeklyPeriods: 5 },
+        { code: "18EC302T", name: "VLSI Design & Systems", weeklyPeriods: 5 },
+        { code: "18EC303T", name: "Electromagnetic Waves & Systems", weeklyPeriods: 5 },
+        { code: "18EC304J", name: "Microcontrollers & Embedded", weeklyPeriods: 5 },
+        { code: "18LEM101T", name: "Professional Ethics & Values", weeklyPeriods: 4 }
+      ],
+      "III ECE-B": [
+        { code: "18EC301T", name: "Digital Signal Processing (DSP)", weeklyPeriods: 6 },
+        { code: "18EC302T", name: "VLSI Design & Systems", weeklyPeriods: 6 },
+        { code: "18EC303T", name: "Electromagnetic Waves & Systems", weeklyPeriods: 6 },
+        { code: "18EC304J", name: "Microcontrollers & Embedded", weeklyPeriods: 5 },
+        { code: "18LEM101T", name: "Professional Ethics & Values", weeklyPeriods: 5 }
+      ],
+      "DEFAULT": [
+        { code: "SUB101", name: "Core Subject 1", weeklyPeriods: 6 },
+        { code: "SUB102", name: "Core Subject 2", weeklyPeriods: 6 },
+        { code: "SUB103", name: "Applied Mathematics", weeklyPeriods: 5 },
+        { code: "SUB104", name: "Department Lab / Practical", weeklyPeriods: 5 },
+        { code: "SUB105", name: "Professional Elective", weeklyPeriods: 4 }
+      ]
+    };
+
+    const SEMESTER_START = new Date("2026-08-29");
+    const SEMESTER_END = new Date("2026-11-29");
+
+    let attendanceChart = null;
+    let globalCalcState = {};
+    let ttsEnabled = true;
+    let recognition = null;
+    let isListening = false;
+    let activeSelectedRoom = "IST602";
+    let countdownInterval = null;
+    let visualViewMode = '3d';
+
+    // ==========================================
+    // 2. TAB & VIEW CONTROLLER
+    // ==========================================
+    function switchMainTab(tab) {
+      const v3d = document.getElementById('view-3d-map');
+      const vFloor = document.getElementById('view-floor-manager');
+      const vAtt = document.getElementById('view-attendance');
+
+      const t3d = document.getElementById('tab-3d');
+      const tFloor = document.getElementById('tab-floor');
+      const tAtt = document.getElementById('tab-attendance');
+
+      [v3d, vFloor, vAtt].forEach(el => el.classList.add('hidden'));
+      [t3d, tFloor, tAtt].forEach(el => {
+        el.className = "pb-3 text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition flex items-center gap-2";
+      });
+
+      if (tab === '3d') {
+        v3d.classList.remove('hidden');
+        t3d.className = "pb-3 text-indigo-400 border-b-2 border-indigo-500 transition flex items-center gap-2";
+        if (visualViewMode === '3d') {
+          setTimeout(onWindowResize, 80);
+        } else {
+          renderFlatPlanView();
+        }
+      } else if (tab === 'floor') {
+        vFloor.classList.remove('hidden');
+        tFloor.className = "pb-3 text-indigo-400 border-b-2 border-indigo-500 transition flex items-center gap-2";
+        renderFloorGrid();
+      } else {
+        vAtt.classList.remove('hidden');
+        tAtt.className = "pb-3 text-indigo-400 border-b-2 border-indigo-500 transition flex items-center gap-2";
+      }
+    }
+
+    function setVisualViewMode(mode) {
+      visualViewMode = mode;
+      const btn3D = document.getElementById('btn-view-3d');
+      const btnFlat = document.getElementById('btn-view-flat');
+      const threeBox = document.getElementById('threejs-canvas-container');
+      const flatBox = document.getElementById('flat-plan-container');
+      const modeBadge = document.getElementById('mode-badge');
+      const hint = document.getElementById('canvas-hint');
+
+      if (mode === '3d') {
+        btn3D.className = "px-3 py-1.5 rounded-lg bg-indigo-600 text-white transition flex items-center gap-1.5 shadow";
+        btnFlat.className = "px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-1.5";
+        threeBox.classList.remove('hidden');
+        flatBox.classList.add('hidden');
+        modeBadge.textContent = "WebGL 3D: All 8 Floors (0 to 7) Rendered";
+        hint.textContent = "Controls: Left-Click Rotate • Right-Click Pan • Scroll Zoom";
+        setTimeout(onWindowResize, 60);
+        update3DMaterials();
+      } else {
+        btnFlat.className = "px-3 py-1.5 rounded-lg bg-indigo-600 text-white transition flex items-center gap-1.5 shadow";
+        btn3D.className = "px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-1.5";
+        threeBox.classList.add('hidden');
+        flatBox.classList.remove('hidden');
+        modeBadge.textContent = "Plain Flat 2D Architectural Plan View (8 Floors)";
+        hint.textContent = "Direct architectural floor layout • Click any room to inspect";
+        renderFlatPlanView();
+      }
+    }
+
+    function syncScheduleInputs(type, val) {
+      if (type === 'day') {
+        document.getElementById('map-day-select').value = val;
+        document.getElementById('grid-day-select').value = val;
+      } else if (type === 'period') {
+        document.getElementById('map-period-select').value = val;
+        document.getElementById('grid-period-select').value = val;
+      }
+      update3DMaterials();
+      if (visualViewMode === 'flat') renderFlatPlanView();
+      selectRoomForInspector(activeSelectedRoom);
+      renderFloorGrid();
+    }
+
+    // ==========================================
+    // 3. THREE.JS 3D WEBGL ENGINE (FLOORS 0 TO 7)
+    // ==========================================
+    let scene, camera, renderer, controls;
+    let roomMeshes = [];
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    // Vertical Y coordinates for all 8 floors (Ground to 7th)
+    const floorYCoordinates = {
+      0: -7.0,
+      1: -4.8,
+      2: -2.6,
+      3: -0.4,
+      4: 1.8,
+      5: 4.0,
+      6: 6.2,
+      7: 8.4
+    };
+
+    function initThreeJS() {
+      const container = document.getElementById('threejs-canvas-container');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x020617);
+      scene.fog = new THREE.FogExp2(0x020617, 0.012);
+
+      // Camera placed to frame all 8 stacked floors cleanly
+      camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 1000);
+      camera.position.set(24, 6, 28);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI / 2.02;
+      controls.minDistance = 12;
+      controls.maxDistance = 75;
+      controls.target.set(0, 0.7, 0); // Center point between Floor 0 and Floor 7
+
+      // Lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xe0e7ff, 0.95);
+      dirLight.position.set(20, 35, 25);
+      dirLight.castShadow = true;
+      scene.add(dirLight);
+
+      const centerLight = new THREE.PointLight(0x818cf8, 1.4, 70);
+      centerLight.position.set(0, 4, 8);
+      scene.add(centerLight);
+
+      // Ground foundation
+      const gridHelper = new THREE.GridHelper(36, 24, 0x4f46e5, 0x1e1b4b);
+      gridHelper.position.y = -8.5;
+      scene.add(gridHelper);
+
+      buildBuildingStructure();
+
+      renderer.domElement.addEventListener('mousemove', onCanvasMouseMove);
+      renderer.domElement.addEventListener('click', onCanvasMouseClick);
+      window.addEventListener('resize', onWindowResize);
+
+      animateThreeJS();
+    }
+
+    function createTextCanvasTexture(text, subText) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#090d16';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = '#6366f1';
+      ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
+      ctx.font = 'bold 36px system-ui, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, canvas.width / 2, canvas.height / 2 - 8);
+      if (subText) {
+        ctx.font = '18px system-ui, sans-serif';
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText(subText, canvas.width / 2, canvas.height / 2 + 28);
+      }
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    function buildBuildingStructure() {
+      const slabGeo = new THREE.BoxGeometry(14, 0.28, 8.5);
+      const slabMat = new THREE.MeshPhysicalMaterial({
+        color: 0x1e1b4b,
+        transparent: true,
+        opacity: 0.65,
+        roughness: 0.2,
+        metalness: 0.1,
+        transmission: 0.45,
+        ior: 1.3
+      });
+
+      // Construct all 8 floors (0 to 7)
+      for (let floor = 0; floor <= 7; floor++) {
+        const y = floorYCoordinates[floor];
+        
+        // Floor Glass Slab
+        const slab = new THREE.Mesh(slabGeo, slabMat);
+        slab.position.set(0, y - 0.75, 0);
+        slab.receiveShadow = true;
+        scene.add(slab);
+
+        // Border Glow
+        const edges = new THREE.EdgesGeometry(slabGeo);
+        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x4f46e5 }));
+        line.position.copy(slab.position);
+        scene.add(line);
+
+        // Columns
+        const pillarGeo = new THREE.CylinderGeometry(0.1, 0.1, 2.0);
+        const pillarMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8 });
+        [[-6.4, -3.8], [6.4, -3.8], [-6.4, 3.8], [6.4, 3.8]].forEach(([px, pz]) => {
+          const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+          pillar.position.set(px, y + 0.25, pz);
+          scene.add(pillar);
+        });
+
+        // Signage
+        const floorSignTex = createTextCanvasTexture(floor === 0 ? "GROUND" : `FLOOR ${floor}`, `Level ${floor}`);
+        const signMat = new THREE.MeshBasicMaterial({ map: floorSignTex, transparent: true });
+        const signGeo = new THREE.PlaneGeometry(2.3, 1.15);
+        const signMesh = new THREE.Mesh(signGeo, signMat);
+        signMesh.position.set(-8.2, y, 0);
+        signMesh.rotation.y = Math.PI / 4;
+        scene.add(signMesh);
+      }
+
+      // Rooms
+      rooms.forEach(room => {
+        const y = floorYCoordinates[room.floor];
+        const width = 2.8;
+        const height = 1.45;
+        const depth = 4.0;
+
+        const boxGeo = new THREE.BoxGeometry(width, height, depth);
+        const topTexture = createTextCanvasTexture(room.id, `${room.type}`);
+
+        const sideMat = new THREE.MeshStandardMaterial({
+          color: 0x10b981,
+          metalness: 0.3,
+          roughness: 0.35,
+          transparent: true,
+          opacity: 0.9
+        });
+
+        const topMat = new THREE.MeshStandardMaterial({
+          map: topTexture,
+          metalness: 0.2,
+          roughness: 0.4
+        });
+
+        const materials = [sideMat, sideMat, topMat, sideMat, sideMat, sideMat];
+        const roomMesh = new THREE.Mesh(boxGeo, materials);
+        roomMesh.position.set(room.pos.x, y, room.pos.z);
+        roomMesh.castShadow = true;
+        roomMesh.receiveShadow = true;
+        roomMesh.userData = { room: room };
+
+        scene.add(roomMesh);
+        roomMeshes.push(roomMesh);
+      });
+
+      update3DMaterials();
+    }
+
+    function update3DMaterials() {
+      const day = document.getElementById('map-day-select').value;
+      const period = parseInt(document.getElementById('map-period-select').value);
+
+      roomMeshes.forEach(mesh => {
+        const room = mesh.userData.room;
+        const occupiedList = roomTimetable[day] && roomTimetable[day][room.id] ? roomTimetable[day][room.id] : [];
+        const isOccupied = occupiedList.includes(period);
+        const isSelected = room.id === activeSelectedRoom;
+
+        const colorHex = isOccupied ? 0xf43f5e : 0x10b981;
+        const emissiveHex = isSelected ? 0x6366f1 : (isOccupied ? 0x881337 : 0x064e3b);
+        const emissiveIntensity = isSelected ? 0.75 : 0.2;
+
+        mesh.material.forEach((mat, idx) => {
+          if (idx !== 2) {
+            mat.color.setHex(colorHex);
+            mat.emissive.setHex(emissiveHex);
+            mat.emissiveIntensity = emissiveIntensity;
+          }
+        });
+      });
+    }
+
+    function onCanvasMouseMove(e) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(roomMeshes);
+      const tooltip = document.getElementById('room-hover-tooltip');
+
+      if (intersects.length > 0) {
+        const mesh = intersects[0].object;
+        const room = mesh.userData.room;
+        const day = document.getElementById('map-day-select').value;
+        const period = parseInt(document.getElementById('map-period-select').value);
+        const occupiedList = roomTimetable[day] && roomTimetable[day][room.id] ? roomTimetable[day][room.id] : [];
+        const isOccupied = occupiedList.includes(period);
+
+        tooltip.innerHTML = `
+          <div class="font-black text-indigo-300 text-sm">${room.id} (${room.type})</div>
+          <div class="text-[11px] text-slate-300">Floor ${room.floor === 0 ? 'G (Ground)' : room.floor} • Cap: ${room.capacity} • ${room.ac ? 'AC' : 'Non-AC'}</div>
+          <div class="mt-1 font-bold ${!isOccupied ? 'text-emerald-400' : 'text-rose-400'}">
+            ${!isOccupied ? '● AVAILABLE' : '● OCCUPIED'}
+          </div>
+        `;
+        tooltip.style.left = `${e.clientX - rect.left + 15}px`;
+        tooltip.style.top = `${e.clientY - rect.top + 15}px`;
+        tooltip.classList.remove('hidden');
+      } else {
+        tooltip.classList.add('hidden');
+      }
+    }
+
+    function onCanvasMouseClick(e) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(roomMeshes);
+
+      if (intersects.length > 0) {
+        const mesh = intersects[0].object;
+        const room = mesh.userData.room;
+        selectRoomForInspector(room.id);
+        update3DMaterials();
+      }
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById('threejs-canvas-container');
+      if (!container || !renderer || !camera) return;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    }
+
+    function animateThreeJS() {
+      requestAnimationFrame(animateThreeJS);
+      controls.update();
+
+      roomMeshes.forEach(mesh => {
+        if (mesh.userData.room.id === activeSelectedRoom) {
+          mesh.scale.set(1.08, 1.08, 1.08);
+        } else {
+          mesh.scale.set(1, 1, 1);
+        }
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    function reset3DCamera() {
+      camera.position.set(24, 6, 28);
+      controls.target.set(0, 0.7, 0);
+      controls.update();
+    }
+
+    // ==========================================
+    // 4. PLAIN FLAT 2D ARCHITECTURAL VIEW (0 TO 7)
+    // ==========================================
+    function renderFlatPlanView() {
+      const container = document.getElementById('flat-plan-container');
+      const day = document.getElementById('map-day-select').value;
+      const period = parseInt(document.getElementById('map-period-select').value);
+      container.innerHTML = '';
+
+      const floorOrder = [7, 6, 5, 4, 3, 2, 1, 0];
+      floorOrder.forEach(floor => {
+        const floorRooms = rooms.filter(r => r.floor === floor);
+        const floorWrap = document.createElement('div');
+        floorWrap.className = "bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-3";
+
+        let roomsHTML = '';
+        floorRooms.forEach(room => {
+          const occupiedList = roomTimetable[day] && roomTimetable[day][room.id] ? roomTimetable[day][room.id] : [];
+          const isOccupied = occupiedList.includes(period);
+          const isSelected = room.id === activeSelectedRoom;
+
+          const baseBorder = isOccupied 
+            ? 'border-rose-500/50 bg-rose-950/20 text-rose-200' 
+            : 'border-emerald-500/60 bg-emerald-950/30 text-emerald-200';
+          const ring = isSelected ? 'ring-2 ring-indigo-400 shadow-lg' : '';
+
+          roomsHTML += `
+            <div 
+              onclick="selectRoomForInspector('${room.id}'); renderFlatPlanView();"
+              class="flat-grid-card cursor-pointer p-3.5 rounded-xl border ${baseBorder} ${ring} flex flex-col justify-between"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-black text-sm text-white">${room.id}</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${isOccupied ? 'bg-rose-900 text-rose-300' : 'bg-emerald-900 text-emerald-300'}">
+                  ${isOccupied ? 'OCCUPIED' : 'FREE'}
+                </span>
+              </div>
+              <div class="text-xs space-y-0.5 text-slate-400">
+                <div>Type: <b class="text-slate-300">${room.type}</b></div>
+                <div class="flex justify-between">
+                  <span>Cap: <b class="text-slate-300">${room.capacity}</b></span>
+                  <span class="${room.ac ? 'text-cyan-400' : 'text-slate-400'} font-semibold">${room.ac ? 'AC' : 'Non-AC'}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+
+        floorWrap.innerHTML = `
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded bg-indigo-500"></span>
+              <h3 class="font-bold text-sm text-indigo-300 uppercase tracking-wider">
+                ${floor === 0 ? 'Ground Floor (G)' : `Floor ${floor}`} Blueprint
+              </h3>
+            </div>
+            <span class="text-xs text-slate-400 font-semibold">${floorRooms.length} Rooms Tracked</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            ${roomsHTML}
+          </div>
+        `;
+        container.appendChild(floorWrap);
+      });
+    }
+
+    // ==========================================
+    // 5. INSPECTOR & LIVE COUNTDOWN TIMER
+    // ==========================================
+    function selectRoomForInspector(roomId) {
+      activeSelectedRoom = roomId;
+      const room = rooms.find(r => r.id === roomId) || rooms[0];
+      const day = document.getElementById('map-day-select').value;
+      const period = parseInt(document.getElementById('map-period-select').value);
+
+      document.getElementById('inspector-room-id').textContent = room.id;
+      document.getElementById('inspector-room-sub').textContent = `${room.type} • Floor ${room.floor === 0 ? 'G (Ground)' : room.floor}`;
+      document.getElementById('inspector-room-cap').textContent = `Capacity: ${room.capacity}`;
+      document.getElementById('inspector-room-ac').textContent = room.ac ? '❄️ AC Equipped' : 'Non-AC';
+
+      const occupiedList = roomTimetable[day] && roomTimetable[day][room.id] ? roomTimetable[day][room.id] : [];
+      const isOccupied = occupiedList.includes(period);
+
+      const statusBadge = document.getElementById('selected-room-status-badge');
+      if (isOccupied) {
+        statusBadge.textContent = 'OCCUPIED';
+        statusBadge.className = 'text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-rose-900 text-rose-300 border border-rose-600 uppercase';
+        document.getElementById('inspector-curr-occupant').textContent = 'In Class (Scheduled Activity)';
+        document.getElementById('call-squad-btn').classList.add('opacity-50', 'pointer-events-none');
+      } else {
+        statusBadge.textContent = 'FREE NOW';
+        statusBadge.className = 'text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-900 text-emerald-300 border border-emerald-600 uppercase';
+        document.getElementById('inspector-curr-occupant').textContent = 'Available (No classes active)';
+        document.getElementById('call-squad-btn').classList.remove('opacity-50', 'pointer-events-none');
+      }
+
+      let nextOccupiedPeriod = null;
+      for (let p = period + 1; p <= 9; p++) {
+        if (occupiedList.includes(p)) {
+          nextOccupiedPeriod = p;
+          break;
+        }
+      }
+
+      const nextOccEl = document.getElementById('inspector-next-occupant');
+      const freeUntilEl = document.getElementById('inspector-free-until');
+
+      if (nextOccupiedPeriod) {
+        const nextTime = periodTimes[nextOccupiedPeriod];
+        nextOccEl.textContent = `Period ${nextOccupiedPeriod} (${nextTime.label})`;
+        freeUntilEl.textContent = `${nextTime.start}`;
+      } else {
+        nextOccEl.textContent = 'No more classes scheduled today!';
+        freeUntilEl.textContent = 'End of Day (05:05 PM)';
+      }
+
+      startLiveCountdown(nextOccupiedPeriod);
+      update3DMaterials();
+    }
+
+    function startLiveCountdown(nextPeriod) {
+      if (countdownInterval) clearInterval(countdownInterval);
+
+      const timerEl = document.getElementById('inspector-countdown-timer');
+
+      function updateClock() {
+        const now = new Date();
+        let targetHours, targetMinutes;
+
+        if (nextPeriod && periodTimes[nextPeriod]) {
+          const [h, m] = periodTimes[nextPeriod].start.split(':').map(Number);
+          targetHours = h;
+          targetMinutes = m;
+        } else {
+          targetHours = 17;
+          targetMinutes = 5;
+        }
+
+        const target = new Date();
+        target.setHours(targetHours, targetMinutes, 0, 0);
+
+        let diff = target - now;
+        if (diff <= 0) {
+          diff = (45 * 60 + 20) * 1000;
+        }
+
+        const totalSecs = Math.floor(diff / 1000);
+        const hrs = Math.floor(totalSecs / 3600);
+        const mins = Math.floor((totalSecs % 3600) / 60);
+        const secs = totalSecs % 60;
+
+        const pad = n => String(n).padStart(2, '0');
+        timerEl.textContent = `${pad(hrs)}h ${pad(mins)}m ${pad(secs)}s`;
+      }
+
+      updateClock();
+      countdownInterval = setInterval(updateClock, 1000);
+    }
+
+    // ==========================================
+    // 6. THE "CALL THE SQUAD" (WHATSAPP)
+    // ==========================================
+    function generateSquadMessage() {
+      const room = rooms.find(r => r.id === activeSelectedRoom) || rooms[0];
+      const freeUntil = document.getElementById('inspector-free-until').textContent;
+      const floorStr = room.floor === 0 ? "Ground Floor" : `Floor ${room.floor}`;
+      return `📍 Heading to ${room.id} (${room.type}, ${floorStr}). It's free until ${freeUntil}. Come fast!`;
+    }
+
+    function triggerCallTheSquad() {
+      const message = generateSquadMessage();
+      const whatsappURL = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+      window.open(whatsappURL, '_blank');
+    }
+
+    function copySquadLink() {
+      const message = generateSquadMessage();
+      navigator.clipboard.writeText(message).then(() => {
+        const label = document.getElementById('copy-btn-label');
+        label.textContent = "Copied to Clipboard!";
+        setTimeout(() => { label.textContent = "Copy Invite Message"; }, 2000);
+      });
+    }
+
+    // ==========================================
+    // 7. PHASE 1 FLOOR GRID & AI ROOM FINDER
+    // ==========================================
+    function renderFloorGrid(customFilter = null) {
+      const day = document.getElementById('grid-day-select').value;
+      const period = parseInt(document.getElementById('grid-period-select').value);
+      const floorFilter = document.getElementById('filter-floor').value;
+      const acFilter = document.getElementById('filter-ac').value;
+      const statusFilter = document.getElementById('filter-status').value;
+      const container = document.getElementById('floor-grid-container');
+
+      container.innerHTML = '';
+      const floors = [...new Set(rooms.map(r => r.floor))].sort((a, b) => b - a);
+      let totalFree = 0;
+      let totalVisibleFloors = 0;
+
+      floors.forEach(floor => {
+        if (floorFilter !== 'ALL' && parseInt(floorFilter) !== floor) return;
+
+        const floorRooms = rooms.filter(r => r.floor === floor);
+        const filteredRooms = floorRooms.filter(room => {
+          const occupiedList = roomTimetable[day] && roomTimetable[day][room.id] ? roomTimetable[day][room.id] : [];
+          const hours = customFilter && customFilter.hours ? customFilter.hours : 1;
+          
+          let isOccupied = false;
+          for (let h = 0; h < hours; h++) {
+            if (occupiedList.includes(period + h)) {
+              isOccupied = true;
+              break;
+            }
+          }
+
+          if (acFilter === 'YES' && !room.ac) return false;
+          if (acFilter === 'NO' && room.ac) return false;
+          if (customFilter && customFilter.acOnly && !room.ac) return false;
+          if (statusFilter === 'EMPTY' && isOccupied) return false;
+          if (statusFilter === 'OCCUPIED' && !isOccupied) return false;
+
+          return true;
+        });
+
+        if (filteredRooms.length === 0) return;
+        totalVisibleFloors++;
+
+        let roomsHTML = '';
+        filteredRooms.forEach(room => {
+          const occupiedList = roomTimetable[day] && roomTimetable[day][room.id] ? roomTimetable[day][room.id] : [];
+          const hours = customFilter && customFilter.hours ? customFilter.hours : 1;
+          
+          let isOccupied = false;
+          for (let h = 0; h < hours; h++) {
+            if (occupiedList.includes(period + h)) {
+              isOccupied = true;
+              break;
+            }
+          }
+
+          if (!isOccupied) totalFree++;
+
+          roomsHTML += `
+            <div 
+              onclick="activeSelectedRoom='${room.id}'; switchMainTab('3d');" 
+              class="p-3.5 rounded-xl border cursor-pointer transition ${!isOccupied ? 'bg-emerald-950/25 border-emerald-500/50 hover:border-emerald-400' : 'bg-rose-950/20 border-rose-500/40 opacity-75'}"
+            >
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="font-bold text-slate-100 text-sm">${room.id}</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${!isOccupied ? 'bg-emerald-900 text-emerald-300 border border-emerald-700' : 'bg-rose-900 text-rose-300 border border-rose-700'}">
+                  ${!isOccupied ? 'FREE' : 'OCCUPIED'}
+                </span>
+              </div>
+              <div class="text-xs space-y-1 text-slate-400">
+                <div class="flex justify-between">
+                  <span>Type: <b class="text-slate-300">${room.type}</b></span>
+                  <span>Cap: <b class="text-slate-300">${room.capacity}</b></span>
+                </div>
+                <div class="flex justify-between">
+                  <span>AC: <b class="${room.ac ? 'text-cyan-400' : 'text-slate-400'}">${room.ac ? 'Yes' : 'No'}</b></span>
+                  <span>Status: <b class="${!isOccupied ? 'text-emerald-400' : 'text-rose-400'}">${!isOccupied ? 'Available' : 'In Class'}</b></span>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+
+        const floorCard = document.createElement('div');
+        floorCard.className = "bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3";
+        floorCard.innerHTML = `
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h3 class="font-bold text-lg text-indigo-300 flex items-center gap-2">
+              <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+              ${floor === 0 ? 'Ground Floor (G)' : `Floor ${floor}`}
+            </h3>
+            <span class="text-xs text-slate-400 font-semibold">${filteredRooms.length} Room(s) Listed</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+            ${roomsHTML}
+          </div>
+        `;
+        container.appendChild(floorCard);
+      });
+
+      document.getElementById('quick-free-count').textContent = totalFree;
+      if (totalVisibleFloors === 0) {
+        container.innerHTML = `<div class="p-8 text-center bg-slate-900 rounded-2xl border border-slate-800 text-slate-400 text-sm">No rooms match the selected criteria for this period.</div>`;
+      }
+    }
+
+    function executeAIRoomSearch() {
+      const inputEl = document.getElementById('ai-room-query');
+      const query = inputEl.value.trim();
+      if (!query) return;
+
+      const q = query.toLowerCase();
+      const day = document.getElementById('grid-day-select').value;
+      const startPeriod = parseInt(document.getElementById('grid-period-select').value);
+
+      const requiresAC = q.includes('ac') || q.includes('air-condition') || q.includes('cool');
+      
+      let targetFloor = null;
+      if (q.includes('ground') || q.includes('floor 0') || q.includes('g floor')) targetFloor = 0;
+      else if (q.includes('1st') || q.includes('first floor') || q.includes('floor 1')) targetFloor = 1;
+      else if (q.includes('2nd') || q.includes('second floor') || q.includes('floor 2')) targetFloor = 2;
+      else if (q.includes('3rd') || q.includes('third floor') || q.includes('floor 3')) targetFloor = 3;
+      else if (q.includes('4th') || q.includes('fourth floor') || q.includes('floor 4')) targetFloor = 4;
+      else if (q.includes('5th') || q.includes('fifth floor') || q.includes('floor 5')) targetFloor = 5;
+      else if (q.includes('6th') || q.includes('sixth floor') || q.includes('floor 6')) targetFloor = 6;
+      else if (q.includes('7th') || q.includes('seventh floor') || q.includes('floor 7')) targetFloor = 7;
+
+      let hours = 1;
+      const hoursMatch = q.match(/(\d+)\s*(hour|hours|period|periods)/);
+      if (hoursMatch) hours = parseInt(hoursMatch[1]);
+
+      const matchedRooms = rooms.filter(room => {
+        if (requiresAC && !room.ac) return false;
+        if (targetFloor !== null && room.floor !== targetFloor) return false;
+
+        const occupiedList = roomTimetable[day] && roomTimetable[day][room.id] ? roomTimetable[day][room.id] : [];
+        for (let h = 0; h < hours; h++) {
+          if (occupiedList.includes(startPeriod + h)) return false;
+        }
+        return true;
+      });
+
+      const outputBox = document.getElementById('ai-search-output');
+      const countBadge = document.getElementById('ai-match-count');
+      const paramsEl = document.getElementById('ai-extracted-params');
+      const listEl = document.getElementById('ai-matched-rooms-list');
+
+      outputBox.classList.remove('hidden');
+      countBadge.textContent = `${matchedRooms.length} Matches Found`;
+
+      paramsEl.innerHTML = `
+        <span>• Extracted AC: <strong class="text-slate-200">${requiresAC ? 'Yes' : 'Any'}</strong></span>
+        <span>• Target Floor: <strong class="text-slate-200">${targetFloor !== null ? (targetFloor === 0 ? 'Ground' : 'Floor ' + targetFloor) : 'Any Floor'}</strong></span>
+        <span>• Duration: <strong class="text-slate-200">${hours} Consecutive Period(s)</strong></span>
+        <span>• Starting: <strong class="text-slate-200">Period ${startPeriod} (${day})</strong></span>
+      `;
+
+      if (matchedRooms.length === 0) {
+        listEl.innerHTML = `<div class="col-span-full p-3 text-center text-amber-300 bg-amber-950/30 border border-amber-700/50 rounded-lg text-xs">No rooms meet all criteria for the specified duration. Try reducing duration or relaxing the AC/floor requirement.</div>`;
+      } else {
+        listEl.innerHTML = matchedRooms.map(r => `
+          <div onclick="activeSelectedRoom='${r.id}'; switchMainTab('3d');" class="p-3 bg-emerald-950/30 border border-emerald-500/50 rounded-xl space-y-1 cursor-pointer hover:border-emerald-400 transition">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-slate-100 text-xs">${r.id}</span>
+              <span class="text-[10px] bg-emerald-900 text-emerald-300 font-bold px-2 py-0.5 rounded">AVAILABLE</span>
+            </div>
+            <p class="text-[11px] text-slate-300">${r.floor === 0 ? 'Ground Floor' : 'Floor ' + r.floor} • ${r.type} • Cap: ${r.capacity} • ${r.ac ? 'AC' : 'Non-AC'}</p>
+          </div>
+        `).join('');
+      }
+
+      renderFloorGrid({ acOnly: requiresAC, floor: targetFloor, hours });
+    }
+
+    function setQueryAndSearch(txt) {
+      document.getElementById('ai-room-query').value = txt;
+      executeAIRoomSearch();
+    }
+
+    // ==========================================
+    // 8. ATTENDANCE ADVISOR ENGINE
+    // ==========================================
+    const sectionSelect = document.getElementById('section-select');
+    Object.keys(sectionTimetables).forEach(sec => {
+      const opt = document.createElement('option');
+      opt.value = sec;
+      opt.textContent = sec;
+      sectionSelect.appendChild(opt);
+    });
+
+    function getClassesBetweenDates(section, startDate, endDate) {
+      const timetable = sectionTimetables[section];
+      let total = 0;
+      let curr = new Date(startDate);
+      while (curr <= endDate) {
+        const dayOfWeek = curr.getDay();
+        total += timetable[dayOfWeek] || 0;
+        curr.setDate(curr.getDate() + 1);
+      }
+      return total;
+    }
+
+    function renderSubjectInputs() {
+      const section = sectionSelect.value;
+      const subjects = subjectSchedules[section] || subjectSchedules["DEFAULT"];
+      const container = document.getElementById('subject-inputs-container');
+      container.innerHTML = '';
+
+      subjects.forEach((sub, index) => {
+        const card = document.createElement('div');
+        card.className = "bg-slate-950 border border-slate-800 p-4 rounded-2xl flex flex-col justify-between space-y-3 shadow";
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">${sub.code}</span>
+              <span id="sub-pct-badge-${index}" class="text-xs font-extrabold text-emerald-400">100.0%</span>
+            </div>
+            <h4 class="font-bold text-slate-200 text-sm line-clamp-1" title="${sub.name}">${sub.name}</h4>
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Missed Classes (Periods):</label>
+            <input 
+              type="number" 
+              id="missed-input-${index}" 
+              min="0" 
+              value="0" 
+              oninput="calculateAttendance()" 
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-slate-200 text-sm font-semibold focus:ring-2 focus:ring-indigo-500 outline-none" 
+            />
+          </div>
+
+          <div class="space-y-1 text-[11px] text-slate-400 border-t border-slate-800 pt-2">
+            <div class="flex justify-between">
+              <span>Conducted / Attended:</span>
+              <span id="sub-counts-${index}" class="font-medium text-slate-200">0 / 0</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Safe Bunks Left:</span>
+              <span id="sub-bunk-${index}" class="font-bold text-indigo-400">0 periods</span>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function calculateAttendance() {
+      const section = sectionSelect.value;
+      const odDays = parseInt(document.getElementById('od-days').value) || 0;
+      const mlDays = parseInt(document.getElementById('ml-days').value) || 0;
+
+      const curDateVal = new Date(document.getElementById('current-date').value);
+      const tgtDateVal = new Date(document.getElementById('target-date').value);
+
+      const today = curDateVal < SEMESTER_START ? SEMESTER_START : (curDateVal > SEMESTER_END ? SEMESTER_END : curDateVal);
+      const targetDate = tgtDateVal > SEMESTER_END ? SEMESTER_END : (tgtDateVal < today ? today : tgtDateVal);
+
+      const prevDate = new Date(today);
+      prevDate.setDate(prevDate.getDate() - 1);
+      
+      const totalConductedSoFar = prevDate >= SEMESTER_START ? getClassesBetweenDates(section, SEMESTER_START, prevDate) : 0;
+      const remainingClasses = getClassesBetweenDates(section, today, targetDate);
+
+      const subjectsList = subjectSchedules[section] || subjectSchedules["DEFAULT"];
+      const totalWeeklyPeriods = subjectsList.reduce((sum, s) => sum + s.weeklyPeriods, 0);
+
+      let grandTotalConducted = 0;
+      let grandTotalAttended = 0;
+      let grandTotalMissed = 0;
+
+      const subjectBreakdown = subjectsList.map((sub, index) => {
+        const subWeight = sub.weeklyPeriods / totalWeeklyPeriods;
+        const subConducted = Math.round(totalConductedSoFar * subWeight);
+        
+        const missedInput = document.getElementById(`missed-input-${index}`);
+        const missedVal = missedInput ? (parseInt(missedInput.value) || 0) : 0;
+        
+        const subAttended = Math.max(0, subConducted - missedVal);
+        const subPct = subConducted > 0 ? ((subAttended / subConducted) * 100).toFixed(1) : "100.0";
+        
+        const subRemaining = Math.round(remainingClasses * subWeight);
+        const subTotalSemester = subConducted + subRemaining;
+        const subMaxMissable = Math.floor(subTotalSemester * 0.25);
+        const subSafeBunk = Math.max(0, subMaxMissable - missedVal);
+
+        grandTotalConducted += subConducted;
+        grandTotalAttended += subAttended;
+        grandTotalMissed += missedVal;
+
+        const badgeEl = document.getElementById(`sub-pct-badge-${index}`);
+        const countsEl = document.getElementById(`sub-counts-${index}`);
+        const bunkEl = document.getElementById(`sub-bunk-${index}`);
+
+        if (badgeEl) {
+          const isSafe = parseFloat(subPct) >= 75;
+          badgeEl.textContent = `${subPct}%`;
+          badgeEl.className = `text-xs font-extrabold ${isSafe ? 'text-emerald-400' : 'text-rose-400'}`;
+        }
+        if (countsEl) countsEl.textContent = `${subConducted} / ${subAttended}`;
+        if (bunkEl) bunkEl.textContent = `${subSafeBunk} periods`;
+
+        return {
+          ...sub,
+          conducted: subConducted,
+          attended: subAttended,
+          missed: missedVal,
+          pct: parseFloat(subPct),
+          safeBunks: subSafeBunk
+        };
+      });
+
+      const timetable = sectionTimetables[section];
+      const avgPeriodsPerDay = (timetable[1] + timetable[2] + timetable[3] + timetable[4] + timetable[5]) / 5;
+      
+      const odMlCreditedClasses = Math.round((odDays + mlDays) * avgPeriodsPerDay);
+      const effectiveAttended = Math.min(grandTotalConducted, grandTotalAttended + odMlCreditedClasses);
+      
+      const rawOverallPct = grandTotalConducted > 0 ? ((grandTotalAttended / grandTotalConducted) * 100).toFixed(1) : "100.0";
+      const effectivePctVal = grandTotalConducted > 0 ? ((effectiveAttended / grandTotalConducted) * 100) : 100;
+      const effectivePct = effectivePctVal.toFixed(1);
+
+      const totalSemesterClasses = grandTotalConducted + remainingClasses;
+      const maxMissableTotal = Math.floor(totalSemesterClasses * 0.25);
+      const safeBunkPeriods = Math.max(0, maxMissableTotal - grandTotalMissed);
+      const needed75 = Math.max(0, Math.ceil(totalSemesterClasses * 0.75) - effectiveAttended);
+
+      globalCalcState = {
+        section,
+        grandTotalConducted,
+        grandTotalAttended,
+        grandTotalMissed,
+        effectivePct,
+        effectivePctVal,
+        remainingClasses,
+        needed75,
+        safeBunkPeriods,
+        subjectBreakdown
+      };
+
+      document.getElementById('calculated-overall-pct').textContent = rawOverallPct + "%";
+      document.getElementById('total-conducted-info').textContent = `${grandTotalAttended} / ${grandTotalConducted} total periods attended`;
+      document.getElementById('safe-bunk-periods').textContent = `${safeBunkPeriods} periods`;
+
+      document.getElementById('res-effective-pct').textContent = effectivePct + "%";
+      document.getElementById('res-od-benefit').textContent = `Base: ${rawOverallPct}% (+${odMlCreditedClasses} periods credited)`;
+      document.getElementById('res-remaining').textContent = remainingClasses;
+      document.getElementById('res-detention').textContent = needed75;
+
+      const statusBadge = document.getElementById('eligibility-badge');
+      const hasSubDetention = subjectBreakdown.some(s => s.pct < 75);
+
+      if (effectivePctVal >= 90 && !hasSubDetention) {
+        statusBadge.textContent = "🌟 Distinction Tier (All Subjects Safe)";
+        statusBadge.className = "text-xs font-bold text-emerald-400";
+      } else if (effectivePctVal >= 75 && !hasSubDetention) {
+        statusBadge.textContent = "✅ Eligible for Semester Exams";
+        statusBadge.className = "text-xs font-bold text-indigo-400";
+      } else {
+        statusBadge.textContent = "⚠️ Subject Detention Risk (<75%)";
+        statusBadge.className = "text-xs font-bold text-rose-400 animate-pulse";
+      }
+
+      const alertBanner = document.getElementById('alert-banner');
+      if (needed75 > remainingClasses || hasSubDetention) {
+        alertBanner.classList.remove('hidden');
+      } else {
+        alertBanner.classList.add('hidden');
+      }
+
+      renderChart(grandTotalAttended, grandTotalMissed, remainingClasses);
+    }
+
+    function renderChart(attended, missed, remaining) {
+      const ctx = document.getElementById('attendanceChart').getContext('2d');
+      if (attendanceChart) attendanceChart.destroy();
+
+      attendanceChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Attended', 'Missed', 'Remaining'],
+          datasets: [{
+            data: [attended, missed, remaining],
+            backgroundColor: ['#10b981', '#f43f5e', '#6366f1'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { color: '#cbd5e1', font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    // ==========================================
+    // 9. VOICE & CHATBOT ASSISTANT
+    // ==========================================
+    function toggleTTS() {
+      ttsEnabled = !ttsEnabled;
+      document.getElementById('tts-toggle-btn').textContent = ttsEnabled ? "🔊 Audio: ON" : "🔇 Audio: OFF";
+    }
+
+    function speakText(text) {
+      if (!ttsEnabled || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const cleanText = text.replace(/<[^>]*>/g, '');
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function toggleSpeechRecognition() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert("Speech recognition not supported in this browser.");
+        return;
+      }
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (isListening) {
+        if (recognition) recognition.stop();
+        setMicListeningState(false);
+        return;
+      }
+      recognition = new SpeechRec();
+      recognition.continuous = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => setMicListeningState(true);
+      recognition.onresult = (e) => {
+        document.getElementById('chat-input').value = e.results[0][0].transcript;
+        sendChatMessage();
+      };
+      recognition.onerror = () => setMicListeningState(false);
+      recognition.onend = () => setMicListeningState(false);
+      recognition.start();
+    }
+
+    function setMicListeningState(listening) {
+      isListening = listening;
+      const micBtn = document.getElementById('mic-btn');
+      micBtn.className = listening 
+        ? 'p-2.5 bg-rose-600 animate-pulse text-white rounded-xl border border-rose-500 transition flex-shrink-0'
+        : 'p-2.5 bg-slate-800 hover:bg-indigo-600 text-slate-300 rounded-xl border border-slate-700 transition flex-shrink-0';
+    }
+
+    function toggleChat() {
+      document.getElementById('chat-window').classList.toggle('hidden');
+    }
+
+    function sendQuickPrompt(promptText) {
+      document.getElementById('chat-input').value = promptText;
+      sendChatMessage();
+    }
+
+    function sendChatMessage() {
+      const inputEl = document.getElementById('chat-input');
+      const query = inputEl.value.trim();
+      if (!query) return;
+
+      appendMessage(query, 'user');
+      inputEl.value = '';
+
+      setTimeout(() => {
+        const response = generateAIAdvice(query);
+        appendMessage(response, 'bot');
+        speakText(response);
+      }, 300);
+    }
+
+    function appendMessage(text, sender) {
+      const chatMessages = document.getElementById('chat-messages');
+      const msgDiv = document.createElement('div');
+      
+      msgDiv.className = sender === 'user'
+        ? 'bg-indigo-600 text-white p-3 rounded-2xl max-w-[85%] ml-auto text-xs shadow'
+        : 'bg-slate-800 text-slate-200 p-3 rounded-2xl max-w-[88%] text-xs border border-slate-700 shadow';
+      
+      msgDiv.innerHTML = text;
+      chatMessages.appendChild(msgDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function generateAIAdvice(query) {
+      const q = query.toLowerCase();
+
+      if (q.includes("flat") || q.includes("plain") || q.includes("blueprint") || q.includes("2d")) {
+        switchMainTab('3d');
+        setVisualViewMode('flat');
+        return `I've switched your view to the <b>Plain Flat 2D Blueprint</b> layout showing all 8 floors!`;
+      }
+
+      if (q.includes("3d") || q.includes("orbit")) {
+        switchMainTab('3d');
+        setVisualViewMode('3d');
+        return `Switched to the <b>3D Orbit Building Model</b> with all 8 floors visible!`;
+      }
+
+      if (q.includes("room") || q.includes("floor") || q.includes("ac room") || q.includes("empty")) {
+        switchMainTab('floor');
+        document.getElementById('ai-room-query').value = query;
+        executeAIRoomSearch();
+        return `I've opened the <b>Floor Manager</b> and searched empty rooms matching: <i>"${query}"</i>. Check the results above!`;
+      }
+
+      if (q.includes("squad") || q.includes("invite") || q.includes("whatsapp")) {
+        switchMainTab('3d');
+        triggerCallTheSquad();
+        return `Opened the visual map and generated the "Call the Squad" WhatsApp broadcast message for room <b>${activeSelectedRoom}</b>!`;
+      }
+
+      const state = globalCalcState;
+      if (q.includes("subject") || q.includes("risk") || q.includes("at-risk")) {
+        const atRisk = state.subjectBreakdown.filter(s => s.pct < 75);
+        if (atRisk.length === 0) {
+          return `✅ <b>All subjects are safe!</b> Every course in section <b>${state.section}</b> is currently at or above 75%.`;
+        }
+        const names = atRisk.map(s => `• <b>${s.name}</b> (${s.pct}% - Missed ${s.missed} classes)`).join("<br>");
+        return `⚠️ <b>At-Risk Subjects Detected:</b><br>${names}<br><br>Please attend all remaining periods in these courses!`;
+      }
+
+      if (q.includes("bunk") || q.includes("safe")) {
+        return `🏃 <b>Safe Bunk Buffer:</b> You have <b>${state.safeBunkPeriods} periods</b> overall that you can miss before hitting 75%.`;
+      }
+
+      return `Connected to <b>${state.section}</b>. Effective attendance: <b>${state.effectivePct}%</b>. Switch tabs above to inspect the 3D Map, Flat Blueprint View, or Attendance!`;
+    }
+
+    function exportICS() {
+      const state = globalCalcState;
+      const icsData = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//SRM IST Attendance Advisor//EN
+BEGIN:VEVENT
+SUMMARY:SRM Attendance Plan - ${state.section}
+DESCRIPTION:Effective Attendance: ${state.effectivePct}%. Safe Bunks: ${state.safeBunkPeriods} periods.
+DTSTART:20260928T080000Z
+DTEND:20261129T170000Z
+END:VEVENT
+END:VCALENDAR`;
+
+      const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.setAttribute('download', 'srm_attendance_plan.ics');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Auto Initializer
+    window.onload = () => {
+      initThreeJS();
+      selectRoomForInspector(activeSelectedRoom);
+      renderFlatPlanView();
+      renderFloorGrid();
+      renderSubjectInputs();
+      calculateAttendance();
+    };
+  </script>
+</body>
+</html>
