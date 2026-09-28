@@ -71,36 +71,21 @@ ClassSync AI also includes an AI-based attendance advisor interface.
 The advisor is designed to help students understand their attendance situation and provide guidance based on the information available in the application.
  
 🧠 How ClassSync AI Works
-The basic workflow can be represented as:
-             ┌──────────────────┐
-             │  Select Section  │
-             └────────┬─────────┘
-                      ↓
-             ┌──────────────────┐
-             │ Attendance Input │
-             └────────┬─────────┘
-                      ↓
-             ┌──────────────────┐
-             │ Timetable Engine │
-             └────────┬─────────┘
-                      ↓
-             ┌──────────────────┐
-             │ Calculation      │
-             │ Engine           │
-             └────────┬─────────┘
-                      ↓
-       ┌──────────────┼──────────────┐
-       ↓              ↓              ↓
-  Attendance      Simulators      Analytics
-   Planning       OD / Medical      Charts
-       │              │              │
-       └──────────────┼──────────────┘
-                      ↓
-             ┌──────────────────┐
-             │ AI Attendance    │
-             │ Advisor          │
-             └──────────────────┘
- 
+flowchart TD
+    A[Select Class Section] --> B[Enter Current Attendance]
+    B --> C[Select Planning Date]
+    C --> D[Timetable Engine]
+    D --> E[Attendance Calculation Engine]
+    E --> F[Attendance Planning]
+    E --> G[OD Simulator]
+    E --> H[Medical Leave Simulator]
+    E --> I[Attendance Analytics]
+    F --> J[Future Attendance Status]
+    G --> J
+    H --> J
+    I --> J
+    J --> K[AI Attendance Advisor]
+    K --> L[Attendance Insights & Guidance]
 🖥️ Screenshots
 Screenshots of the actual ClassSync AI interface can be added here after capturing them from the deployed website.
 Main Dashboard
