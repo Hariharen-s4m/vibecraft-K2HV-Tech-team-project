@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SRM IST Attendance Dashboard & AI Assistant</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans p-4 md:p-8">
+
+  <div class="max-w-6xl mx-auto space-y-6 pb-20">
+    <!-- Header -->
+    <header class="border-b border-slate-700 pb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <h1 class="text-3xl font-extrabold text-indigo-400 tracking-tight">SRM IST Attendance Dashboard</h1>
+        <p class="text-slate-400 text-sm mt-1">Odd Semester Period: Aug 29, 2026 – Nov 29, 2026</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="bg-emerald-900/50 text-emerald-300 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-700">Official Department Timetables Integrated</span>
+      </div>
+    </header>
+
+    <!-- Irreversible Detention Alert Banner -->
+    <div id="alert-banner" class="hidden bg-red-900/80 border-2 border-red-500 text-red-100 p-4 rounded-xl shadow-lg flex items-start gap-3 animate-pulse">
+      <svg class="w-6 h-6 text-red-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+      </svg>
+      <div>
+        <h3 class="font-bold text-lg text-red-200">ALERT: Irreversible Detention!</h3>
+        <p class="text-sm text-red-200/90 mt-1">
+          Even if you attend every remaining scheduled period this semester, it is mathematically impossible to reach the mandatory 75% attendance mark.
+        </p>
+      </div>
+    </div>
+
+    <!-- Main Setup & Controls Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Student & Class Setup -->
+      <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-md space-y-4 lg:col-span-2">
+        <h2 class="text-xl font-bold text-slate-200 border-b border-slate-700 pb-2">1. Core Setup & Planning</h2>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Class Selector (Official PDF Names) -->
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-slate-300 mb-1">Select Official Class / Section</label>
+            <select id="section-select" onchange="calculateAttendance()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none">
+              <!-- Dynamically populated from PDF timetable data -->
+            </select>
+          </div>
+
+          <!-- Current Attendance % -->
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1">Current Attendance (%)</label>
+            <input type="number" id="current-pct" min="0" max="100" step="0.1" value="70.0" oninput="calculateAttendance()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none" />
+          </div>
+
+          <!-- Current Date -->
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1">Current Date</label>
+            <input type="date" id="current-date" min="2026-08-29" max="2026-11-29" value="2026-09-28" onchange="calculateAttendance()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none" />
+          </div>
+
+          <!-- Target Date -->
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-slate-300 mb-1">Target Planning Date</label>
+            <input type="date" id="target-date" min="2026-08-29" max="2026-11-29" value="2026-11-29" onchange="calculateAttendance()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none" />
+          </div>
+        </div>
+      </div>
+
+      <!-- OD & Medical Leave Simulator -->
+      <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-md space-y-4">
+        <h2 class="text-xl font-bold text-slate-200 border-b border-slate-700 pb-2">2. OD / Medical Leave Simulator</h2>
+        <p class="text-xs text-slate-400">Input approved On-Duty (OD) or Medical Leave days to calculate your adjusted effective attendance.</p>
+        
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-1">Approved OD Days</label>
+          <input type="number" id="od-days" min="0" max="30" value="0" oninput="calculateAttendance()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-1">Medical Leave Days</label>
+          <input type="number" id="ml-days" min="0" max="30" value="0" oninput="calculateAttendance()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none" />
+        </div>
+
+        <button onclick="calculateAttendance()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-lg shadow transition duration-200 mt-2">
+          Recalculate Now
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Analytics Dashboard: Cards & Visual Chart -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Summary Metric Cards -->
+      <div class="space-y-4">
+        <!-- Effective Percentage Card -->
+        <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl text-center">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Effective Attendance</span>
+          <span id="res-effective-pct" class="text-3xl font-black text-indigo-400">70.0%</span>
+          <p id="res-od-benefit" class="text-xs text-slate-400 mt-1">Base: 70.0%</p>
+        </div>
+
+        <!-- Remaining Classes -->
+        <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl text-center">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Remaining Periods</span>
+          <span id="res-remaining" class="text-3xl font-black text-blue-400">0</span>
+          <p class="text-xs text-slate-400 mt-1">Scheduled periods before target date</p>
+        </div>
+
+        <!-- Needed for 75% -->
+        <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl text-center">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Needed for 75% (Min. Criteria)</span>
+          <span id="res-detention" class="text-3xl font-black text-amber-400">0</span>
+          <p class="text-xs text-slate-400 mt-1">Must attend to prevent detention</p>
+        </div>
+
+        <!-- Needed for 90% -->
+        <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl text-center">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Needed for 90% (High Tier)</span>
+          <span id="res-goal" class="text-3xl font-black text-emerald-400">0</span>
+          <p id="res-goal-sub" class="text-xs text-slate-400 mt-1">Periods required to reach goal</p>
+        </div>
+      </div>
+
+      <!-- Attendance Breakdown Visual Chart -->
+      <div class="bg-slate-800 border border-slate-700 p-6 rounded-xl lg:col-span-2 flex flex-col items-center justify-center">
+        <h3 class="text-lg font-bold text-slate-200 self-start mb-4">Official Timetable Breakdown Chart</h3>
+        <div class="w-full max-w-md h-64">
+          <canvas id="attendanceChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Chatbot Button -->
+  <button id="chat-toggle" onclick="toggleChat()" class="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-500 text-white p-4 rounded-full shadow-2xl transition duration-300 z-50 flex items-center justify-center gap-2">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+    </svg>
+    <span class="font-medium hidden sm:inline">Attendance Advisor</span>
+  </button>
+
+  <!-- Chatbot Drawer Window -->
+  <div id="chat-window" class="hidden fixed bottom-20 right-6 w-96 max-w-[calc(100vw-3rem)] h-[480px] bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden">
+    <!-- Chat Header -->
+    <div class="bg-slate-900 p-4 border-b border-slate-700 flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+        <h4 class="font-bold text-slate-200">Attendance Advisor AI</h4>
+      </div>
+      <button onclick="toggleChat()" class="text-slate-400 hover:text-slate-200 text-lg font-bold">&times;</button>
+    </div>
+
+    <!-- Messages Area -->
+    <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 text-sm">
+      <div class="bg-slate-700/60 p-3 rounded-lg text-slate-200 max-w-[85%]">
+        Hello! I am connected directly to your official class timetable data. Ask me questions like <i>"If I take a 3-day sick leave starting tomorrow, will I drop below 75%?"</i>
+      </div>
+    </div>
+
+    <!-- Chat Input Form -->
+    <div class="p-3 border-t border-slate-700 bg-slate-900/50 flex gap-2">
+      <input type="text" id="chat-input" placeholder="Ask about your attendance..." onkeydown="if(event.key==='Enter') sendChatMessage()" class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500" />
+      <button onclick="sendChatMessage()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg text-xs font-semibold transition">
+        Send
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // --- Daily Period Distribution Extracted Directly From Department PDF Documents ---
+    // [Sun, Mon, Tue, Wed, Thu, Fri, Sat]
+    const sectionTimetables = {
+      "I ECE-A":          { 1: 6, 2: 6, 3: 5, 4: 4, 5: 6, 6: 0, 0: 0 },
+      "I ECE-B / EEE":    { 1: 6, 2: 5, 3: 7, 4: 6, 5: 4, 6: 0, 0: 0 },
+      "I ECE-DS":         { 1: 6, 2: 6, 3: 6, 4: 5, 5: 5, 6: 0, 0: 0 },
+      "I Biotech-B / BME": { 1: 6, 2: 5, 3: 4, 4: 5, 5: 5, 6: 0, 0: 0 },
+      "II BME":           { 1: 6, 2: 7, 3: 4, 4: 5, 5: 5, 6: 0, 0: 0 },
+      "II ECE-DS A":      { 1: 6, 2: 6, 3: 5, 4: 5, 5: 4, 6: 0, 0: 0 },
+      "II ECE-DS B":      { 1: 6, 2: 6, 3: 5, 4: 6, 5: 5, 6: 0, 0: 0 },
+      "III ECE-A":        { 1: 4, 2: 5, 3: 5, 4: 5, 5: 5, 6: 0, 0: 0 },
+      "III ECE-B":        { 1: 7, 2: 5, 3: 5, 4: 6, 5: 5, 6: 0, 0: 0 },
+      "III ECE-DS":       { 1: 6, 2: 6, 3: 6, 4: 4, 5: 6, 6: 0, 0: 0 },
+      "III BME":          { 1: 7, 2: 4, 3: 5, 4: 5, 5: 5, 6: 0, 0: 0 },
+      "IV ECE-A":         { 1: 5, 2: 4, 3: 5, 4: 4, 5: 4, 6: 0, 0: 0 },
+      "IV ECE-B":         { 1: 5, 2: 5, 3: 5, 4: 5, 5: 4, 6: 0, 0: 0 }
+    };
+
+    const SEMESTER_START = new Date("2026-08-29");
+    const SEMESTER_END = new Date("2026-11-29");
+
+    let attendanceChart = null;
+    let globalCalcState = {};
+
+    // Populate Select Options with exact names
+    const sectionSelect = document.getElementById('section-select');
+    Object.keys(sectionTimetables).forEach(sec => {
+      const opt = document.createElement('option');
+      opt.value = sec;
+      opt.textContent = sec;
+      sectionSelect.appendChild(opt);
+    });
+
+    // Helper: Calculate total scheduled periods between two dates using class timetable
+    function getClassesBetweenDates(section, startDate, endDate) {
+      const timetable = sectionTimetables[section];
+      let total = 0;
+      let curr = new Date(startDate);
+
+      while (curr <= endDate) {
+        const dayOfWeek = curr.getDay();
+        total += timetable[dayOfWeek] || 0;
+        curr.setDate(curr.getDate() + 1);
+      }
+      return total;
+    }
+
+    // Main Calculation Function
+    function calculateAttendance() {
+      const section = sectionSelect.value;
+      const currentPct = parseFloat(document.getElementById('current-pct').value) || 0;
+      const odDays = parseInt(document.getElementById('od-days').value) || 0;
+      const mlDays = parseInt(document.getElementById('ml-days').value) || 0;
+
+      const curDateVal = new Date(document.getElementById('current-date').value);
+      const tgtDateVal = new Date(document.getElementById('target-date').value);
+
+      const today = curDateVal < SEMESTER_START ? SEMESTER_START : (curDateVal > SEMESTER_END ? SEMESTER_END : curDateVal);
+      const targetDate = tgtDateVal > SEMESTER_END ? SEMESTER_END : (tgtDateVal < today ? today : tgtDateVal);
+
+      // Periods conducted so far
+      const prevDate = new Date(today);
+      prevDate.setDate(prevDate.getDate() - 1);
+      
+      const conductedSoFar = prevDate >= SEMESTER_START ? getClassesBetweenDates(section, SEMESTER_START, prevDate) : 0;
+      let rawAttended = Math.round((currentPct / 100) * conductedSoFar);
+
+      // Average daily periods for section
+      const timetable = sectionTimetables[section];
+      const avgPeriodsPerDay = (timetable[1] + timetable[2] + timetable[3] + timetable[4] + timetable[5]) / 5;
+      
+      const odMlCreditedClasses = Math.round((odDays + mlDays) * avgPeriodsPerDay);
+      const effectiveAttended = Math.min(conductedSoFar, rawAttended + odMlCreditedClasses);
+      const effectivePct = conductedSoFar > 0 ? ((effectiveAttended / conductedSoFar) * 100).toFixed(1) : currentPct.toFixed(1);
+
+      // Remaining periods
+      const remainingClasses = getClassesBetweenDates(section, today, targetDate);
+      const totalSemesterClasses = conductedSoFar + remainingClasses;
+
+      function getClassesNeeded(targetPct) {
+        if (totalSemesterClasses === 0) return 0;
+        const requiredAttended = Math.ceil((targetPct / 100) * totalSemesterClasses);
+        const needed = requiredAttended - effectiveAttended;
+        return Math.max(0, needed);
+      }
+
+      const needed75 = getClassesNeeded(75);
+      const needed90 = getClassesNeeded(90);
+
+      // Save state for Chatbot AI Advisor
+      globalCalcState = {
+        section,
+        conductedSoFar,
+        effectiveAttended,
+        effectivePct,
+        remainingClasses,
+        totalSemesterClasses,
+        needed75,
+        needed90,
+        avgPeriodsPerDay
+      };
+
+      // Update Metric UI Elements
+      document.getElementById('res-effective-pct').textContent = effectivePct + "%";
+      document.getElementById('res-od-benefit').textContent = `Base: ${currentPct.toFixed(1)}% (+${odMlCreditedClasses} periods credited)`;
+      document.getElementById('res-remaining').textContent = remainingClasses;
+      document.getElementById('res-detention').textContent = needed75;
+
+      const alertBanner = document.getElementById('alert-banner');
+      if (needed75 > remainingClasses) {
+        alertBanner.classList.remove('hidden');
+        document.getElementById('res-detention').textContent = "N/A";
+      } else {
+        alertBanner.classList.add('hidden');
+      }
+
+      if (needed90 > remainingClasses) {
+        document.getElementById('res-goal').textContent = "N/A";
+        document.getElementById('res-goal-sub').textContent = "Cannot reach 90% this semester";
+      } else {
+        document.getElementById('res-goal').textContent = needed90;
+        document.getElementById('res-goal-sub').textContent = "Required to reach/maintain 90%";
+      }
+
+      renderChart(effectiveAttended, Math.max(0, conductedSoFar - effectiveAttended), remainingClasses);
+    }
+
+    // Render Dynamic Chart
+    function renderChart(attended, missed, remaining) {
+      const ctx = document.getElementById('attendanceChart').getContext('2d');
+      if (attendanceChart) {
+        attendanceChart.destroy();
+      }
+
+      attendanceChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Attended Periods', 'Absent Periods', 'Remaining Periods'],
+          datasets: [{
+            data: [attended, missed, remaining],
+            backgroundColor: ['#10b981', '#f43f5e', '#6366f1'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: '#cbd5e1' }
+            }
+          }
+        }
+      });
+    }
+
+    // Chatbot UI Toggle
+    function toggleChat() {
+      const chatWin = document.getElementById('chat-window');
+      chatWin.classList.toggle('hidden');
+    }
+
+    function sendChatMessage() {
+      const inputEl = document.getElementById('chat-input');
+      const query = inputEl.value.trim();
+      if (!query) return;
+
+      appendMessage(query, 'user');
+      inputEl.value = '';
+
+      setTimeout(() => {
+        const response = generateAIAdvice(query);
+        appendMessage(response, 'bot');
+      }, 400);
+    }
+
+    function appendMessage(text, sender) {
+      const chatMessages = document.getElementById('chat-messages');
+      const msgDiv = document.createElement('div');
+      
+      if (sender === 'user') {
+        msgDiv.className = 'bg-indigo-600 text-white p-3 rounded-lg max-w-[85%] ml-auto text-xs';
+      } else {
+        msgDiv.className = 'bg-slate-700/80 text-slate-200 p-3 rounded-lg max-w-[85%] text-xs border border-slate-600';
+      }
+      
+      msgDiv.innerHTML = text;
+      chatMessages.appendChild(msgDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Advisor Logic Reading Current Dashboard Calculations
+    function generateAIAdvice(query) {
+      const q = query.toLowerCase();
+      const state = globalCalcState;
+
+      const daysMatch = q.match(/(\d+)\s*(day|days|class|classes|period|periods)/);
+      const leaveDays = daysMatch ? parseInt(daysMatch[1]) : 3;
+
+      if (q.includes("sick") || q.includes("leave") || q.includes("absent") || q.includes("drop")) {
+        const missedPeriods = Math.round(leaveDays * state.avgPeriodsPerDay);
+        const futureAttended = state.effectiveAttended;
+        const futureConducted = state.conductedSoFar + missedPeriods;
+        const projectedPct = futureConducted > 0 ? ((futureAttended / futureConducted) * 100).toFixed(1) : state.effectivePct;
+
+        let advice = `If you take a <b>${leaveDays}-day leave</b> (~${missedPeriods} periods missed for section <b>${state.section}</b>), your attendance will drop from <b>${state.effectivePct}%</b> to approximately <b>${projectedPct}%</b>.`;
+
+        if (projectedPct < 75) {
+          advice += `<br><br><span class="text-red-400 font-bold">Warning:</span> This will drop your attendance below the 75% detention threshold! Please file OD/Medical Leave.`;
+        } else {
+          advice += `<br><br><span class="text-emerald-400 font-bold">Safe:</span> You will remain above the 75% minimum threshold.`;
+        }
+        return advice;
+      } 
+      
+      if (q.includes("90%") || q.includes("goal")) {
+        if (state.needed90 > state.remainingClasses) {
+          return `You need ${state.needed90} periods for 90%, but only ${state.remainingClasses} periods remain. Reaching 90% is no longer mathematically possible.`;
+        }
+        return `To reach 90% attendance in <b>${state.section}</b>, you must attend <b>${state.needed90}</b> out of the remaining ${state.remainingClasses} scheduled periods.`;
+      }
+
+      if (q.includes("75%") || q.includes("detention")) {
+        return `To avoid detention (75%) in <b>${state.section}</b>, you must attend at least <b>${state.needed75}</b> of your remaining ${state.remainingClasses} periods.`;
+      }
+
+      return `Current section: <b>${state.section}</b>. Effective attendance is <b>${state.effectivePct}%</b> with <b>${state.remainingClasses}</b> remaining periods. Ask about taking leaves or reaching target thresholds!`;
+    }
+
+    // Initialize Dashboard
+    window.onload = calculateAttendance;
+  </script>
+</body>
+</html>
