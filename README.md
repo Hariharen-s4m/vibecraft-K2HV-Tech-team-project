@@ -71,7 +71,6 @@ ClassSync AI also includes an AI-based attendance advisor interface.
 The advisor is designed to help students understand their attendance situation and provide guidance based on the information available in the application.
  
 🧠 How ClassSync AI Works
-flowchart TD
     A[Select Class Section] --> B[Enter Current Attendance]
     B --> C[Select Planning Date]
     C --> D[Timetable Engine]
@@ -86,24 +85,6 @@ flowchart TD
     I --> J
     J --> K[AI Attendance Advisor]
     K --> L[Attendance Insights & Guidance]
-🖥️ Screenshots
-Screenshots of the actual ClassSync AI interface can be added here after capturing them from the deployed website.
-Main Dashboard
-Attendance Analytics
-OD Simulator
-Medical Leave Simulator
-AI Attendance Advisor
- 
-📸 Adding Screenshots to the Repository
-Store the screenshots in an assets folder:
-ClassSync AI/
-│
-├── website/
-│   └── index.html
-│
-└── README.md
-GitHub will automatically display the images in the README using the relative paths above.
- 
 🛠️ Technology Stack
 Frontend
 •	HTML5
@@ -118,7 +99,8 @@ Deployment
 ClassSync AI-K2HV-Tech-team-project/
 │
 ├── website/
-│   └── index.html
+│   └── ClassSync AI.html
+|   |__ ClassSyncfinal.html
 │
 ├── presentation/
 │   └── ClassSync AI-Presentation
@@ -179,7 +161,7 @@ By combining calculations, timetable data, simulations, analytics, and AI assist
  
 📜 Project Status
 Status: 🚀 Hackathon Project
-Version: v0
+Version: final
 Project Type: Web Application
 Developed by: K2HV
  
